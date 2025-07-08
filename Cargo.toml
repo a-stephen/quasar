@@ -7,3 +7,6 @@ name="quasar"
 authors=["Stephen Adjignon"]
 version="0.1.0"
 edition="2024"
+
+[workspace.dependencies]
+tokio = { version = "1.46.1", features = ["full"] }
