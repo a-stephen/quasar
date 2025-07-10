@@ -1,5 +1,5 @@
 use tokio;
-use google_drive3::api::File;
+use google_drive3::api::{File, Permission};
 use google_drive3::{Result, Error};
 use google_drive3::{
     DriveHub, FieldMask, hyper, hyper_rustls, hyper_util,
@@ -142,8 +142,41 @@ impl GDrive {
         todo!("Implement the metadata side of the file")
     }
 
-    pub fn build_permission_list() -> GDrivePermission {
-        todo!("Implementation of file permissions")
+    pub fn build_permission_list(self, fileid: &str) -> Vec<Permission> {
+
+        let mut permissions: Vec<_> = vec![];
+        let mut page_token: Option<String> = None;
+
+        loop {
+            let permissions_req = self.drive_hub.permissions()
+                .list(fileid)
+                .add_scopes("https://www.googleapis/auth/drive.readonly")
+                .use_domain_admin_access(false)
+                .supports_team_drives(true)
+                .supports_all_drives(false)
+                .param("fields", "nextPageToken,permissions(id,role,emailAddress)")
+                .page_size(10);
+
+            if let Some(ref token) = page_token {
+                permissions_req = permissions_req.page_token(token);
+            }
+
+            let (_, permissions_list) = permissions_req.doit()
+                .await
+                .expect("permission response failed...");
+
+            if let Some(permissions_list_content) = permissions_list.permissions {
+                permissions.extend_from_slice(permissions_list_content)
+            }
+
+            match permissions_req.page_token {
+                Some(token) => {
+                    page_token = Some(token)
+                }
+                _ => break,
+            }
+        };
+        permissions
     }
 
     pub async fn query(self, query: &str) -> Vec<File> {
