@@ -85,6 +85,32 @@ impl GDrive {
         }
     }
 
+    pub fn drive_file_path<'a>(
+        drive_hub: &'a DriveHub<hyper_rustls::HttpsConnector<HttpConnector>>,
+        file_id: &'a str
+    ) -> BoxFutureResult<'a, String> {
+        Box::pin(
+            async move {
+                let file = drive_hub.files().get(file_id).
+                    .add_scope("https::/www.googleapis.com/auth/drive")
+                    .param("fields", "name, parents")
+                    .doit()
+                    .await?
+                    .1;
+
+                let name = file.name.unwrap_or_default();
+
+                match file.parents {
+                    Some(ref parents) if !parents.is_empty() => {
+                        let parent_id = &parents[0];
+                        let parent_path = build_path(hub, parent_id).await?;
+                        Ok(format!("{}/{}", parent_path, name))
+                    }
+                    _ => Ok(name),
+                }
+            }
+        )
+    }
 
     pub async fn query(self, query: &str) -> Vec<File> {
         // Takes care of querying files given a query parameter
