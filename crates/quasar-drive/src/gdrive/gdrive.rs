@@ -14,30 +14,50 @@ use std::{
     result::Result
 };
 
-
-
-// let scopes = vec![
-//     "https://www.googleapis.com/auth/drive/file",
-//     "https://www.googleapis.com/auth/drive",
-//     "https://www.googleapis.com/drive.metadata"
-// ];
-//
+// Permission {
+//     allow_file_discovery: None,
+//     deleted: Some(false),
+//     display_name: Some("sadjignon015"),
+//     domain: None,
+//     email_address: Some("sadjignon015@gmail.com"),
+//     expiration_time: None,
+//     id: Some("16918889953389630029"),
+//     kind: Some("drive#permission"),
+//     pending_owner: Some(false),
+//     permission_details: None,
+//     photo_link: Some("https://lh3.googleusercontent.com/a-/ALV-UjVGvXiYhpX-NfioP_26vSvuLUXY8EZq9dzMV6VBwSlv8MdNvw=s64"),
+//     role: Some("owner"),
+//     team_drive_permission_details: None,
+//     type_: Some("user"),
+//     view: None
+// }
 
 type BoxFutureResult<'a, T> = Pin<Box<dyn Future<Output = Result<T, anyhow::Error> + Send + 'a>>>;
 
+type GDriveMetadata = struct {
+    createTime: String,
+    modifiedTime: String,
+    parents: Option<&[&str]>,
+    mimeType: String
+}
 
-type GDriveMetadata = HashMap<String, String>;
-type GDrivePermissions = Vec<HashMap<String, String>>;
+
+type GDrivePermissions = struct {
+    user_email: String,
+    permission_id: &str,
+    permission_role: &str
+}
 
 
 struct GDrive {
     credentials: oauth2::ServiceAccountKey,
-    drive_hub: DriveHub,
+    drive_hub: DriveHub
 }
 
 
 struct GDriveFile {
-    drive_name: String,
+    file_name: String,
+    file_id: &str,
     file_path: String,
     metadata: GDriveMetadata,
     permissions: GDrivePermission,
@@ -112,8 +132,21 @@ impl GDrive {
         )
     }
 
+    pub fn build_metadata(self, file) -> GDriveMetadata {
+        // Metadata Fields:
+        //      createdTime ->
+        //      modifiedTime ->
+        //      mimeType ->
+        //      parents ->
+        //
+        todo!("Implement the metadata side of the file")
+    }
+
+    pub fn build_permission_list() -> GDrivePermission {
+        todo!("Implementation of file permissions")
+    }
+
     pub async fn query(self, query: &str) -> Vec<File> {
-        // Takes care of querying files given a query parameter
         let scopes: Vec<&str> = vec![
             "https://www.googleapis.com/auth/drive.file",
             "https://www.googleapis.com/auth/drive",
@@ -151,7 +184,6 @@ impl GDrive {
                 None => break,
             }
         }
-
         files
     }
 
